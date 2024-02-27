@@ -1,0 +1,236 @@
+local lib = loadstring(game:HttpGet("https://raw.githubusercontent.com/AZYsGithub/Arceus-X-UI-Library/main/source.lua"))()
+
+lib:SetTitle("Tool Gui V2")
+lib:SetIcon("http://www.roblox.com/asset/?id=14260295451")
+
+local G = setmetatable({}, {__index = function(Self, Index)
+local NewService = game.GetService(game, Index)
+if NewService then
+Self[Index] = NewService
+end
+return NewService
+end})
+
+local Players = G.Players
+local plr = Players.LocalPlayer
+local connections = {}
+local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Orion/main/source')))()
+   
+local function notify(n, c, i, t)
+n = n or "GGH52Lan"
+c = c or "text"
+i = i or "rbxassetid://14260295451"
+t = t or 5
+OrionLib:MakeNotification({
+    Name = n,
+    Content = c,
+    Image = i,
+    Time = t
+})
+OrionLib:Init()
+end
+
+local ConnectionStatus = {}
+
+local function CheckConnection(v)
+ if typeof(connections[v]) == ("RBXScriptConnection") then
+   if not connections[v] then return notify("ERROR", "This connection is not yet in table") end
+   if connections[v].Connected == true then
+   notify(v, "This connection is RUNNING", nil, 5)
+   return true
+   
+   else
+   notify(v, "This connection is not RUNNING", nil, 5)
+   return false
+   end
+   
+   else
+   
+   return notify("ERROR", "This is not connection") 
+      
+   end
+end
+
+local function Disconnect(...)
+   local T = {...}
+    for i,v in pairs(T) do
+    if typeof(connections[v]) == ("RBXScriptConnection") then
+    connections[v]:Disconnect()
+    CheckConnection(v)
+    else
+    return notify("ERROR", "This is not connection")
+    end
+    end
+end 
+
+lib:AddButton("Equip", function()
+    if  plr.Backpack:GetChildren()[1] then
+    plr.Backpack:GetChildren()[1].Parent = plr.Character
+    end
+end)
+
+lib:AddButton("Drop", function()
+    if plr.Character:FindFirstChildOfClass"Tool" then
+    PermissionToDrop = true
+     plr.Character:FindFirstChildOfClass"Tool".Parent = workspace
+    end
+end)
+
+lib:AddButton("Drop All", function()
+    for i,v in pairs(plr.Character:GetChildren()) do
+    if v:IsA"Tool" then
+    v.CanBeDropped = true
+    v.Parent = workspace
+    
+    end
+    end
+end)
+
+local maxToequip= 30 -- 30 tools can only be equipped cuz laggy
+lib:AddButton("Equip all", function()
+maxToequip = 30
+    for i,v in pairs(plr.Backpack:GetChildren()) do
+    if v:IsA"Tool" and maxToequip >= 1 then
+    maxToequip = maxToequip - 1
+    v.Parent = plr.Character
+    end
+    end
+
+end)
+
+local maxToget = 50
+local function GetDropped()
+maxToget = 50
+for i,v in pairs(workspace:GetChildren()) do
+    if v:IsA"Tool" and maxToget >= 1 then
+    maxToget = maxToget - 1
+    
+    plr.Character.Humanoid:EquipTool(v)
+    end
+    end
+end
+
+lib:AddButton("Get Dropped", function()
+    GetDropped()
+end)
+
+local maxTosave = 100
+local maxTosave2 = 100
+local function CharacterAdded()
+wait(.5)
+    GetDropped()
+    connections["PlayerD"] = plr.Character.Humanoid.Died:Connect(function()
+    connections["PlayerD"]: Disconnect ()
+    maxTosave = 100
+    maxTosave2 = 100
+        for i,v in pairs(plr.Backpack:GetChildren()) do
+        if v:IsA"Tool" and maxTosave >= 1 then
+        maxTosave = maxTosave - 1
+        
+        v.Parent = plr.Character
+        end
+        end
+
+        for i,v in pairs(plr.Character:GetChildren()) do
+        if v:IsA"Tool" and maxTosave2 >= 1 then
+        v.CanBeDropped = true
+        maxTosave2 = maxTosave2 - 1
+        
+        v.Parent = workspace
+        end
+        end
+    end)
+    end
+   
+local function SaveTool()
+    connections["Added"] = plr.CharacterAdded:Connect(CharacterAdded)
+    connections["PlayerD"] = plr.Character.Humanoid.Died:Connect(function()
+    connections["PlayerD"]: Disconnect ()
+    maxTosave = 100
+    maxTosave2 = 100
+        for i,v in pairs(plr.Backpack:GetChildren()) do
+        if v:IsA"Tool" and maxTosave >= 1 then
+        maxTosave = maxTosave - 1
+        
+        v.Parent = plr.Character
+        end
+        end
+
+        for i,v in pairs(plr.Character:GetChildren()) do
+        if v:IsA"Tool" and maxTosave2 >= 1 then
+        v.CanBeDropped = true
+        maxTosave2 = maxTosave2 - 1
+        
+        v.Parent = workspace
+        end
+        end
+    end)
+end
+
+local function DisconnectAll()
+   for i,v in pairs(connections) do
+   if typeof(v) == ("RBXScriptConnection") then 
+   v:Disconnect()
+   CheckConnection(i)
+   end
+   end
+end
+
+lib:AddToggle("Drop on death (SAVE TOOLS)", function(state)
+    if state then
+        SaveTool()
+    else
+    Disconnect("PlayerD", "Added")
+        end
+end, false)
+
+local function AutoGetDrop()
+        connections["Dropped"] = workspace.ChildAdded:connect(function(v)
+        wait()
+        if v:IsA"Tool"then
+        if plr.Character.Humanoid.Health <= 0 then
+        plr.CharacterAdded:Wait():WaitForChild"Humanoid"
+        GetDropped()
+        else
+        GetDropped()
+        end
+        end
+        end)
+end
+
+lib:AddToggle("Auto Get Dropped", function(state)
+    if state then
+    AutoGetDrop()
+    CheckConnection("Dropped") 
+    else
+      Disconnect("Dropped")
+    end
+end, false)
+
+lib:AddButton("Fix", function()
+    maxToequip= 30
+    maxTosave = 100
+    maxTosave2 = 100
+    maxToget = 50
+    DisconnectAll()
+end)
+
+--[[ lib:AddComboBox("Drop a Tool if health is", {"0.5", "1", "1.5", "2"}, function(selection)
+    if selection == "0.5" then
+       healthToDrop = 0.5
+    elseif selection == "1" then 
+       healthToDrop = 1
+      elseif selection == "1.5" then 
+       healthToDrop = 1.5
+       elseif selection == "2" then 
+       healthToDrop = 2
+    end
+end) ]]
+
+lib:SetTheme("Default")
+lib:SetButtonsColor(55, 55, 55)
+lib:SetTitleColor(0, 255, 0)
+lib:SetCloseBtnColor(255, 0, 0)
+lib:SetBackgroundColor(40, 40, 40)
+
+notify("Latest Version!!", "thx for using, pls subscribe to my channel (Random Vidzz) ", nil, 10
